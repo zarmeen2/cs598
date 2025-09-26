@@ -80,10 +80,52 @@ After performing log transformations on the select variables, these were their n
 
 I used the new transformed features instead of their old ones, so I just removed the old features from the modeling data. Note that the target is now `log_btc_market_price`.
 
-### Lag Features
+### Lag Features & Train/Test Split
 
+I created lag features for all of the variables (except `Date`). I used lags of 1, 2, and 3. I wanted to keep the number of lags fairly row to prevent the number of features from exploding. I made sure to shift the data by the lags so the model is always predicting future price. I also shifted the target variable for this reason. I had to drop the `NaN` values due to lagging.
 
+In order to maintain the time-series component of the data, I had to split the data in chronological order. This means the first 80% of the data became the train set and the last 20% of the data became the test set.
+
+### Identifying Correlations
+
+With the lag features, there were now 69 predictors in the model. Viewing a correlation matrix for all 69 x 69 variables would be tricky, so I decided to first identify the top 40 features correlated with the target.
+
+![Target Correlations](plots/target_corr.png)
+
+It makes sense that the top few correlated features are the lags of the target. I Then decided to create a correlation matrix for the top 40 predictors: 
+
+![Correlation Matrix](plots/corr_matrix.png)
+
+Many of hte features are highly correlated with each other. This is understandable since they are lags of similar variables. This implies that there is a risk of multicollinearity. However, Ridge and Lasso regression both have their own ways of dealing with colinear predictors, so I decided to leave these as is for now.
+
+### Fit the Baseline Model
+
+To start off, I fit a MLR on all of the lag features. I wanted to use this as a baseline model to compare the rest of the models to. The other Ridge and Lasso fits should be better performing than the MLR.
+
+I then fit Lasso and Ridge regressions using different alpha values. For Ridge, I tested alphas equal to 0.1, 1, 10, and 100. For Lasso, I tested alphas of 0.01, 0.1, 10, and 100. I decided to include 0.01 for the Lasso fits because Lasso is generally more aggressive in shrinking coefficients compared to Ridge. Smaller alpha values allow Lasso to retain more features before driving coefficients to zero, which can be important for capturing predictive signal in the data. By including 0.01, I was able to see how the model behaves when the penalty is very weak and compare it to the stronger regularization effects at higher alpha values.
 
 ## Results
+
+### Model Comparison
+
+These were the model results for all of the models I fit:
+
+| Model        | Alpha | Train MSE       | Test MSE        | Train R²       | Test R²    |
+|-------------|-------|----------------|----------------|----------------|---------------|
+| MLR         | -     | 0.004433       | 0.232247       | 0.998365       | 0.749542      |
+| Ridge       | 0.1   | 0.004118       | 0.066503       | 0.998481       | 0.928282      |
+| Ridge       | 1     | 0.004325       | 0.048231       | 0.998405       | 0.947988      |
+| Ridge       | 10    | 0.005082       | 0.008136       | 0.998125       | 0.991226      |
+| Ridge       | 100   | 0.008897       | 0.213776       | 0.996718       | 0.769461      |
+| Lasso       | 0.01  | 0.004462       | 0.005973       | 0.998354       | 0.993558      |
+| Lasso       | 0.1   | 0.014388       | 0.047957       | 0.994693       | 0.948283      |
+| Lasso       | 1     | 1.004391       | 3.800743       | 0.629524       | -3.098767     |
+| Lasso       | 10    | 2.711082       | 10.221286      | 0.000000       | -10.022758    |
+| Lasso       | 100   | 2.711082       | 10.221286      | 0.000000       | -10.022758    |
+
+Overall, both Ridge and Lasso clearly outperform the MLR baseline by controlling overfitting and improving generalization. Ridge regression with α = 10 and Lasso regression with α = 0.01 both achieve excellent test performance, with Lasso slightly edging out Ridge in terms of R². However, Ridge shows more stability across different regularization strengths, while Lasso is highly sensitive to the choice of α. Given this trade-off, Ridge (α = 10) can be considered the most reliable model, whereas Lasso (α = 0.01) achieves the absolute best accuracy but may be less robust to changes in the data or parameter settings.
+
+### Residuals of Best Lasso and Ridge Fits
+
 
 ## Conclusion
