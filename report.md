@@ -52,9 +52,35 @@ Majority of the variables have only have zeros in 2010. This was very early on i
 - `btc_cost_per_transaction`
 - `btc_estimated_transaction_volume_usd`
 
+### Duplicate Rows
+
 I finally checked for duplicate rows as these would introduce noise and bias when creating lag features, but there were none. 
 
 ## Data Analysis & Model Selection
+
+### Variable Trends Over Time
+
+To get a better understanding of time-related trends for each variable, I plotted each variable by `Date`:
+
+![Variables by Date Plots](plots/vars_by_date.png)
+
+I was not too concerned about outliers because financial data in general can be very volatile. Especially with Bitcoin, price and activity can vary drastically by day. Thus, I decided to leave all outliers alone.
+
+### Variable Distributions
+
+I next looked at each variable's distribution to identify variables that were highly-skewed.
+
+![Variable Distribution Plots](plots/var_distributions.png)
+
+Several variables are highly skewed to the right including the target `btc_market_price`. I decided to perform log transformations on the highly skewed variables to stabilize variance. I was planning on looking at linear regressions, ridge regressions, and lasso regressions. All three of these regressions require stable variances. Linear Regression assumes residuals to have constant variance. Skewed predictors can lead to heteroscedasticity, where errors grow tih the magnitude of the predictor. It also minimizes the sum of squared errors so the extreme values do not dominate teh fit. Both Ridge and Lasso regression penalize large coefficients. If a predictor is highly skewed, its scale may be much larger than others, causing Ridge or Lasso to penalize it incorrectly.
+
+After performing log transformations on the select variables, these were their new distributions:
+
+![Log Tranformation Distribution Plots](plots/log_tranform_plots.png)
+
+I used the new transformed features instead of their old ones, so I just removed the old features from the modeling data. Note that the target is now `log_btc_market_price`.
+
+### Lag Features
 
 
 
