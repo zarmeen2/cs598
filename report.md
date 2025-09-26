@@ -102,7 +102,7 @@ Many of hte features are highly correlated with each other. This is understandab
 
 To start off, I fit a MLR on all of the lag features. I wanted to use this as a baseline model to compare the rest of the models to. The other Ridge and Lasso fits should be better performing than the MLR.
 
-I then fit Lasso and Ridge regressions using different alpha values. For Ridge, I tested alphas equal to 0.1, 1, 10, and 100. For Lasso, I tested alphas of 0.01, 0.1, 10, and 100. I decided to include 0.01 for the Lasso fits because Lasso is generally more aggressive in shrinking coefficients compared to Ridge. Smaller alpha values allow Lasso to retain more features before driving coefficients to zero, which can be important for capturing predictive signal in the data. By including 0.01, I was able to see how the model behaves when the penalty is very weak and compare it to the stronger regularization effects at higher alpha values.
+I then fit Lasso and Ridge regressions using different α values. For Ridge, I tested αs equal to 0.1, 1, 10, and 100. For Lasso, I tested αs of 0.01, 0.1, 10, and 100. I decided to include 0.01 for the Lasso fits because Lasso is generally more aggressive in shrinking coefficients compared to Ridge. Smaller α values allow Lasso to retain more features before driving coefficients to zero, which can be important for capturing predictive signal in the data. By including 0.01, I was able to see how the model behaves when the penalty is very weak and compare it to the stronger regularization effects at higher α values.
 
 ## Results
 
@@ -110,7 +110,7 @@ I then fit Lasso and Ridge regressions using different alpha values. For Ridge, 
 
 These were the model results for all of the models I fit:
 
-| Model        | Alpha | Train MSE       | Test MSE        | Train R²       | Test R²    |
+| Model        | α | Train MSE       | Test MSE        | Train R²       | Test R²    |
 |-------------|-------|----------------|----------------|----------------|---------------|
 | MLR         | -     | 0.004433       | 0.232247       | 0.998365       | 0.749542      |
 | Ridge       | 0.1   | 0.004118       | 0.066503       | 0.998481       | 0.928282      |
@@ -127,5 +127,27 @@ Overall, both Ridge and Lasso clearly outperform the MLR baseline by controlling
 
 ### Residuals of Best Lasso and Ridge Fits
 
+To determine which model out of the two top models is best, I looked at the predicted vs. actual plots for both models.
+
+![Best Ridge Predicated vs. Actual](plots/ridge-pred-actual.png)
+
+![Best Lasso Predicted vs. Actual]( plots/lasso-pred-actual.png)
+
+Based on the above plots, it's clear the Ridge model is better at predicting Bitcoin market price with more recent data. My final selected model is the Ridge model with α = 10. The final check I did was look at the residuals for this model. 
+
+
+![Best Model Residual Plot](plots/best-model-residuals.png)
+
+Overall, the residuals look randomly distributed around 0 except as the model uses more recent data, the residuals grow. This means that the model is underestimating the increases in Bitcoin market price during more recent periods of time. Since the residuals seem to have a upward trend here, it suggests some nonlinearity.
 
 ## Conclusion
+
+This project applied multiple regression techniques to predict the next day’s Bitcoin market price. After cleaning the dataset, addressing missing/zero values, creating lag features, and applying log transformations, several models were compared: MLR, Ridge, and Lasso.
+
+- The baseline MLR had high training accuracy but poor test performance, showing clear signs of overfitting.
+
+- Lasso (α = 0.01) achieved the best test R², but its sensitivity to the choice of α raised concerns about stability.
+
+- Ridge (α = 10) balanced bias and variance best, delivering consistently strong results and reliable generalization.
+
+Overall, Ridge regression with α = 10 was chosen as the final model. While not flawless, it provides a solid linear baseline for forecasting Bitcoin prices and demonstrates the value of regularization in controlling multicollinearity and improving predictive accuracy.
