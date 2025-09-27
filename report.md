@@ -12,9 +12,9 @@ In the following sections I will walk through the data cleaning, data analysis, 
 
 ### Missing and Zero Values
 
-The first thing I checked for was missing values in the data. Luckily, there was only one variable with 21 missing values: `btc_trade_volume`. Because this is a time-series dataset, it's risky to simply remove these rows. Removing rows could result in gaps in the timeline. Thus, I performed a forward fill on the missing `btc_trade_volume`values. This means, days when `btc_trade_volume` is missing, they'll now be populated by the `btc_trade_volume` value from the day before.
+The first thing I checked for was missing values in the data. Luckily, there was only one variable with 21 missing values: `btc_trade_volume`. Because this is a time-series dataset, it's risky to simply remove these rows. Removing rows could result in gaps in the timeline. Thus, I performed a forward fill on the missing `btc_trade_volume`values. This means, days when `btc_trade_volume` is missing are now populated by the `btc_trade_volume` value from the day before.
 
-The second thing I checked for was values less than or equal ot zero. It's important to check for negative values because in the context of the data, it would not make sense. There can never be a negative price of Bitcoin or a negative number of transactions. I did not find any negative values in the data. However, I did find zeros in the data: 
+The second thing I checked for was values less than or equal to zero. It's important to check for negative values because in the context of the data, it would not make sense. There can never be a negative price of Bitcoin or a negative number of transactions. I did not find any negative values in the data. However, I did find zeros in the data: 
 
 ```
 Columns with 0.0 values:  Index(['btc_market_price', 'btc_market_cap', 'btc_trade_volume',
@@ -25,7 +25,7 @@ Columns with 0.0 values:  Index(['btc_market_price', 'btc_market_cap', 'btc_trad
       dtype='object')
 ```
 
-Looking through these columns, it would only make sense for `btc_n_orphaned_blocks` to have zero values on days there were no blocks orphaned. The rest cannot be zero because Bitcoin prices never reach zero. Bitcoin is so volatile and it will always have some value associated with it. This made me wonder if these values were only zero in early years when the Bitcoin did not exist or there were no transactions that day. These are the date ranges when each variable has zeros: 
+Looking through these columns, it would only make sense for `btc_n_orphaned_blocks` to have zero values on days there were no orphaned blocks. The rest cannot be zero because Bitcoin prices never reach zero. Bitcoin is so volatile and it will always have some value associated with it. This made me wonder if these values were only zero in early years when the Bitcoin did not exist or there were no transactions that day. These are the date ranges when each variable has zeros: 
 
 ```
 Column 'btc_market_price' has 0 values from 2010-02-23 00:00:00 to 2010-08-16 00:00:00
@@ -40,7 +40,7 @@ Column 'btc_cost_per_transaction' has 0 values from 2010-02-23 00:00:00 to 2010-
 Column 'btc_estimated_transaction_volume_usd' has 0 values from 2010-02-23 00:00:00 to 2010-08-16 00:00:00
 ```
 
-Majority of the variables have only have zeros in 2010. This was very early on in the data's history, meaning the Bitcoin might not have existed then, so the zeros are justified. I already determined `btc_n_orphaned_blocks` can be zero, but `btc_median_confirmation_time` can only be zero if there were no transactions that day. We already know `btc_n_transactions` has no zero nor missing values, so rows where `btc_median_confirmation_time` are zero should be considered "bad" rows. I filtered out rows where the following variables were zero:
+Majority of the variables only have zeros in 2010. 2010 early on in the data's history, meaning the Bitcoin might not have existed then, so the zeros are justified. I already determined `btc_n_orphaned_blocks` can be zero, but `btc_median_confirmation_time` can only be zero if there were no transactions that day. We already know `btc_n_transactions` has no zero nor missing values, so rows where `btc_median_confirmation_time` are zero should be considered "bad" rows. I filtered out rows where the following variables were zero:
 
 - `btc_market_price`
 - `btc_market_cap`
@@ -72,13 +72,13 @@ I next looked at each variable's distribution to identify variables that were hi
 
 ![Variable Distribution Plots](plots/var_distributions.png)
 
-Several variables are highly skewed to the right including the target `btc_market_price`. I decided to perform log transformations on the highly skewed variables to stabilize variance. I was planning on looking at linear regressions, ridge regressions, and lasso regressions. All three of these regressions require stable variances. Linear Regression assumes residuals to have constant variance. Skewed predictors can lead to heteroscedasticity, where errors grow tih the magnitude of the predictor. It also minimizes the sum of squared errors so the extreme values do not dominate teh fit. Both Ridge and Lasso regression penalize large coefficients. If a predictor is highly skewed, its scale may be much larger than others, causing Ridge or Lasso to penalize it incorrectly.
+Several variables are highly skewed to the right including the target `btc_market_price`. I decided to perform log transformations on the highly skewed variables to stabilize variance. I was planning on looking at linear regressions, Ridge regressions, and Lasso regressions. All three of these regressions require stable variances. Linear regression assumes residuals to have constant variance. Skewed predictors can lead to heteroscedasticity, where errors grow tih the magnitude of the predictor. It also minimizes the sum of squared errors so the extreme values do not dominate the fit. Both Ridge and Lasso regression penalize large coefficients. If a predictor is highly skewed, its scale may be much larger than others, causing Ridge or Lasso to penalize it incorrectly.
 
 After performing log transformations on the select variables, these were their new distributions:
 
 ![Log Tranformation Distribution Plots](plots/log_tranform_plots.png)
 
-I used the new transformed features instead of their old ones, so I just removed the old features from the modeling data. Note that the target is now `log_btc_market_price`.
+I planned to use the new transformed features instead of their old ones when modeling, so I just removed the old features from the data. Note that the target is now `log_btc_market_price`.
 
 ### Lag Features & Train/Test Split
 
@@ -88,7 +88,7 @@ In order to maintain the time-series component of the data, I had to split the d
 
 ### Identifying Correlations
 
-With the lag features, there were now 69 predictors in the model. Viewing a correlation matrix for all 69 x 69 variables would be tricky, so I decided to first identify the top 40 features correlated with the target.
+With the lag features, there were now 69 predictors in the model. Visualizing a correlation matrix for all 69 x 69 variables would be tricky, so I decided to first identify the top 40 features correlated with the target.
 
 ![Target Correlations](plots/target_corr.png)
 
@@ -102,7 +102,7 @@ Many of hte features are highly correlated with each other. This is understandab
 
 To start off, I fit a MLR on all of the lag features. I wanted to use this as a baseline model to compare the rest of the models to. The other Ridge and Lasso fits should be better performing than the MLR.
 
-I then fit Lasso and Ridge regressions using different α values. For Ridge, I tested αs equal to 0.1, 1, 10, and 100. For Lasso, I tested αs of 0.01, 0.1, 10, and 100. I decided to include 0.01 for the Lasso fits because Lasso is generally more aggressive in shrinking coefficients compared to Ridge. Smaller α values allow Lasso to retain more features before driving coefficients to zero, which can be important for capturing predictive signal in the data. By including 0.01, I was able to see how the model behaves when the penalty is very weak and compare it to the stronger regularization effects at higher α values.
+I then fit Lasso and Ridge regressions using different α values. For Ridge, I tested α equal to 0.1, 1, 10, and 100. For Lasso, I tested α values of 0.01, 0.1, 10, and 100. I decided to include 0.01 for the Lasso fits because Lasso is generally more aggressive in shrinking coefficients compared to Ridge. Smaller α values allow Lasso to retain more features before driving coefficients to zero, which can be important for capturing predictive signal in the data. By including 0.01, I was able to see how the model behaves when the penalty is very weak and compare it to the stronger regularization effects at higher α values.
 
 ## Results
 
