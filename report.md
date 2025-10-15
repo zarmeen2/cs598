@@ -18,15 +18,15 @@ I first decided to take a look at outliers using box plots for all the variables
 
 ![Variable Boxplots](img/boxplot.png)
 
-From the plot, I could see there were a few outliers in teh `Water`, `Superplasticizer`, `Fine Aggregate`, and `Age` predictors. There was also one outlier in the target variable. I decided to leave the outliers in the data because regression trees and Random Forest are very robust to outliers. Polynomial regression and splines do not handle outliers very well, but since regression trees adn Random Forest perform better in general compared to the other two models, I decided to just keep the outliers in the data. I did notice that the scales of the variables differ by a lot, which I dealt with later on.
+From the plot, I could see there were a few outliers in the `Water`, `Superplasticizer`, `Fine Aggregate`, and `Age` predictors. There was also one outlier in the target variable. I decided to leave the outliers in the data because regression trees and Random Forest are very robust to outliers. Polynomial regression and splines do not handle outliers very well, but since regression trees adn Random Forest perform better, in general, compared to the other two models, I decided to just keep the outliers in the data. I did notice that the scales of the variables differ by a lot, which I dealt with later on.
 
 ### Duplicate Rows in Data
 
-I next checked the data for any duplicate rows. Duplicate rows inflate the sample size and it is usually best practice to delete duplicates. I identified 25 duplicate rows, which I removed from the data. I made sure to keep the first instance of each duplicate, so the record is still used in the modeling process.
+I next checked the data for any duplicate rows. Duplicate rows inflate the sample size and it is usually best practice to delete duplicates. I identified 25 duplicate rows, which I removed from the data. I made sure to keep the first instance of each duplicate, so the record was still used in the modeling process.
 
 ### Data Types
 
-Though all the variables are continuous, numerical variables in this dataset, I wanted to make sure they were all of the same type. In Python, integers can behave unexpectedly, especially when working with mainly float values. The `Age` predictor was the only variable of type `int64` whereas the others were all `float64`. I converted `Age` to float so it matched the other predictors' data type.
+Though all the variables are continuous and numerical, I wanted to make sure they were all of the same type. In Python, integers can behave unexpectedly, especially when working with mainly float values. The `Age` predictor was the only variable of type `int64` whereas the others were all `float64`. I converted `Age` to float so it matched the other predictors' data type.
 
 ### Distribution and Relationships Between Variables
 
@@ -34,7 +34,7 @@ I used a pairwise scatter plot to easily and concisely view the distributions of
 
 ![Pairwise Scatter PLot](img/pairwise_scatterplot.png)
 
-After seeing the distributions of the variables in both the box plot and this pairwise plot, I decided it would be best to standardize the variables to prevent fair estimation of coefficients. Ensuring all variables have a mean of 0 and a standard deviation of 1 and contribute equally to the model. This is important for polynomial regression and splines for stability and smoothness. To do this, I used the `sklearn.preprocessing StandardScaler` class when training my polynomial regression and splines models.
+After seeing the distributions of the variables in both the box plot and this pairwise plot, I decided it would be best to standardize the variables to prevent unfair estimations of coefficients. Ensuring all variables have a mean of 0 and a standard deviation of 1 and contribute equally to the model. This is important for polynomial regression and splines for stability and smoothness. To do this, I used the `sklearn.preprocessing StandardScaler` class when training my polynomial regression and splines models.
 
 As for distributions of the data, I noticed some correlation among the ingredient variables. I decided to take no action for this because trees handle multicollinearity well.
 
@@ -60,9 +60,9 @@ Based on these results, the polynomial model with degree 3 is the best fitting m
 
 I next tested splines. I chose cubic splines (degree = 3) because they offer a good trade-off between smoothness and flexibility. They allow the fitted function to model nonlinear relationships without the instability associated with higher-degree polynomials, while ensuring smooth transitions at knot points.
 
-I fit several cubic spline regression models different numbers of knots: 3, 5, 7, 9, and 12. Varying the number of knots controls the model’s flexibility — fewer knots produce smoother fits with higher bias, while more knots allow the model to capture finer details in the data but increase the risk of overfitting.
+I fit several cubic spline regression models with a different number of knots: 3, 5, 7, 9, and 12. Varying the number of knots controls the model’s flexibility — fewer knots produce smoother fits with higher bias, while more knots allow the model to capture finer details in the data but increase the risk of overfitting.
 
-Each spline model was fit using a standardized version of the predictors, and test mean squared error was used to evaluate performance. From the below results, you can see the cubic spline with 5 knots was the best performing spline.
+Each spline model was fit using a standardized version of the predictors, and test mean squared error was used to evaluate performance. From the below results, you can see that the cubic spline with 5 knots was the best performing spline.
 
 | n_knots | Test MSE  |
 | ------- | --------- |
@@ -76,7 +76,7 @@ Each spline model was fit using a standardized version of the predictors, and te
 
 The third type of model I tested was the regression tree. I began by fitting an unpruned tree. The unpruned regression tree had a test MSE of 45.22. I was not expecting the unpruned tree to perform well, but it was a good benchmark to compare the pruned trees against.
 
-To start testing pruned trees, I tested trees with `max_depth` of None, 2, 4, 6, 8, and 10, and `min_samples_leaf` of 1, 2, 5, and 10. Out of these parameters, the best performing model had no `max_depth` and a `min_samples_leaf` of 2. The test MSE for this model was 48.67, which was higher than the test MSE for the unpruned regression tree. The feature importances for this tree were the following: 
+To start testing pruned trees, I tested trees with `max_depth` of None, 2, 4, 6, 8, and 10, and `min_samples_leaf` of 1, 2, 5, and 10. Out of these parameters, the best performing model had a `max_depth` equal to None and a `min_samples_leaf` of 2. The test MSE for this model was 48.67, which was higher than the test MSE for the unpruned regression tree. The feature importances for this tree were the following: 
 
 | Variable           | Importance |
 | ------------------ | ---------- |
@@ -89,11 +89,11 @@ To start testing pruned trees, I tested trees with `max_depth` of None, 2, 4, 6,
 | Fine Aggregate     | 0.027802   |
 | Fly Ash            | 0.005713   |
 
-The unpruned tree most likely performed better than the pruned trees because the dataset if relatively small and is very clean. Pruning probably removed useful structure rather than noise. The pruned tree underfit the data.
+The unpruned tree most likely performed better than the pruned trees because the dataset was relatively small and is very clean. Pruning probably removed useful structure rather than noise, and thus underfitted the data.
 
 ### Random Forest
 
-The final model I tested was the Random Forest. To determine the best Random Forest model, I used cross-validation. I tried various values for the following parameters: `n_estimators`, `max_features`, `max_depth`, and `min_samplels_leaf`. For the friest parameter, I tested 100, 300, and 500 trees. For the second parameter I tested values from 1 to 8 because there is only 8 features in the data. For the third parameter, I tested None, 5, 10, 20. And finally, I tested 1, 2, and 4 for the final parameter. I kept these values lower because I wanted to prevent overfitting.
+The final model I tested was the Random Forest. To determine the best Random Forest model, I used cross-validation. I tried various values for the following parameters: `n_estimators`, `max_features`, `max_depth`, and `min_samplels_leaf`. For the first parameter, I tested 100, 300, and 500 trees. For the second parameter I tested values from 1 to 8 because there were only 8 features in the data. For the third parameter, I tested None, 5, 10, 20. And finally, I tested 1, 2, and 4 for the final parameter. I kept these values lower because I wanted to prevent overfitting.
 
 After fitting all of the models using cross-validation, I consolidated the top 10 performing models in this table: 
 
@@ -110,11 +110,11 @@ After fitting all of the models using cross-validation, I consolidated the top 1
 | 500          | 5            | —         | 1                | 30.554346 |
 | 300          | 6            | —         | 1                | 30.580008 |
 
-I fit the model on the test data using the best combination of hyperparameters from above. This gave a test MS# of 23.53.
+I fit the model on the test data using the best combination of hyperparameters from above. This gave a test MSE of 23.53.
 
 ## Results
 
-The below table summarizes the best models from the four types of models I tested: 
+The below table summarizes the best models from the four types of regressions I tested: 
 
 | Model Type                | Key Parameters / Description                                                                                             | Best Configuration                                                                         | Evaluation Metric (Test MSE) |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------: |
@@ -129,6 +129,6 @@ Across all tested models, the Random Forest achieved the lowest test MSE (23.53)
 
 My analysis compared multiple regression models to predict concrete compressive strength using its material components and age. Polynomial, spline, regression tree, and Random Forest models were evaluated using test MSE.
 
-The Random Forest achieved the lowest test MSE (23.53), showing the best overall predictive performance. Its ensemble approach effectively captured complex relationships while reducing overfitting. In contrast, more flexible polynomial and spline models tended to overfit, and pruned trees underfit the data.
+The Random Forest achieved the lowest test MSE (23.53), showing the best overall predictive performance. Its ensemble approach effectively captured complex relationships while reducing overfitting. In contrast, more flexible polynomial and spline models tended to overfit, whereas pruned trees underfit the data.
 
 Overall, the Random Forest provided the best balance between model complexity and generalization for this dataset.
