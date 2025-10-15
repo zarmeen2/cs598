@@ -74,9 +74,61 @@ Each spline model was fit using a standardized version of the predictors, and te
 
 ### Regression Trees
 
+The third type of model I tested was the regression tree. I began by fitting an unpruned tree. The unpruned regression tree had a test MSE of 45.22. I was not expecting the unpruned tree to perform well, but it was a good benchmark to compare the pruned trees against.
 
+To start testing pruned trees, I tested trees with `max_depth` of None, 2, 4, 6, 8, and 10, and `min_samples_leaf` of 1, 2, 5, and 10. Out of these parameters, the best performing model had no `max_depth` and a `min_samples_leaf` of 2. The test MSE for this model was 48.67, which was higher than the test MSE for the unpruned regression tree. The feature importances for this tree were the following: 
+
+| Variable           | Importance |
+| ------------------ | ---------- |
+| Cement             | 0.371943   |
+| Age                | 0.329646   |
+| Blast Furnace Slag | 0.112071   |
+| Water              | 0.074690   |
+| Superplasticizer   | 0.048068   |
+| Coarse Aggregate   | 0.030067   |
+| Fine Aggregate     | 0.027802   |
+| Fly Ash            | 0.005713   |
+
+The unpruned tree most likely performed better than the pruned trees because the dataset if relatively small and is very clean. Pruning probably removed useful structure rather than noise. The pruned tree underfit the data.
+
+### Random Forest
+
+The final model I tested was the Random Forest. To determine the best Random Forest model, I used cross-validation. I tried various values for the following parameters: `n_estimators`, `max_features`, `max_depth`, and `min_samplels_leaf`. For the friest parameter, I tested 100, 300, and 500 trees. For the second parameter I tested values from 1 to 8 because there is only 8 features in the data. For the third parameter, I tested None, 5, 10, 20. And finally, I tested 1, 2, and 4 for the final parameter. I kept these values lower because I wanted to prevent overfitting.
+
+After fitting all of the models using cross-validation, I consolidated the top 10 performing models in this table: 
+
+| n_estimators | max_features | max_depth | min_samples_leaf |    CV_MSE |
+| ------------ | ------------ | --------- | ---------------- | --------: |
+| 500          | 7            | 20.0      | 1                | 30.323921 |
+| 500          | 6            | 20.0      | 1                | 30.340130 |
+| 500          | 6            | —         | 1                | 30.351989 |
+| 500          | 7            | —         | 1                | 30.355344 |
+| 300          | 7            | 20.0      | 1                | 30.437276 |
+| 300          | 7            | —         | 1                | 30.438082 |
+| 300          | 6            | 20.0      | 1                | 30.540583 |
+| 500          | 5            | 20.0      | 1                | 30.550485 |
+| 500          | 5            | —         | 1                | 30.554346 |
+| 300          | 6            | —         | 1                | 30.580008 |
+
+I fit the model on the test data using the best combination of hyperparameters from above. This gave a test MS# of 23.53.
 
 ## Results
 
+The below table summarizes the best models from the four types of models I tested: 
+
+| Model Type                | Key Parameters / Description                                                                                             | Best Configuration                                                                         | Evaluation Metric (Test MSE) |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------: |
+| **Polynomial Regression** | Polynomial degree varied from 1–5 to test model flexibility                                                              | Degree = **3**                                                                             |                    **53.90** |
+| **Cubic Splines**         | Tested cubic splines (degree = 3) with varying knots                                                                     | n_knots = **5**                                                                            |                    **33.91** |
+| **Regression Tree**       | Compared unpruned vs pruned trees (`max_depth` and `min_samples_leaf`)                                                   | Unpruned tree                                                                              |                    **45.22** |
+| **Random Forest**         | Hyperparameter tuning via 5-fold cross-validation across `n_estimators`, `max_features`, `max_depth`, `min_samples_leaf` | n_estimators = **500**, max_features = **7**, max_depth = **20**, min_samples_leaf = **1** |                    **23.53** |
+
+Across all tested models, the Random Forest achieved the lowest test MSE (23.53), indicating it was the most accurate model for predicting concrete compressive strength.
 
 ## Conclusion
+
+My analysis compared multiple regression models to predict concrete compressive strength using its material components and age. Polynomial, spline, regression tree, and Random Forest models were evaluated using test MSE.
+
+The Random Forest achieved the lowest test MSE (23.53), showing the best overall predictive performance. Its ensemble approach effectively captured complex relationships while reducing overfitting. In contrast, more flexible polynomial and spline models tended to overfit, and pruned trees underfit the data.
+
+Overall, the Random Forest provided the best balance between model complexity and generalization for this dataset.
