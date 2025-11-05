@@ -10,7 +10,7 @@ The `project2` branch contains all of the materials for my Project 2 submission.
 Graders should reference the following materials:
 
 - `code.ipynb`: Contains all of the code I ran to complete this project.
-- `report.md`: The final report of my project.
+- `report.md` and `report.pdf`: The final report of my project.
 
 Other files:
 
